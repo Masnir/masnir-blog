@@ -43,7 +43,11 @@ class MdxContentSource implements ContentSource {
       return this.postsCache;
     }
 
-    const files = fs.readdirSync(POSTS_DIR).filter((f) => /\.mdx?$/.test(f));
+    // Only .md/.mdx files; files starting with "_" (e.g. _TEMPLATE.mdx) and
+    // README.md are authoring helpers, not articles, so they're skipped.
+    const files = fs
+      .readdirSync(POSTS_DIR)
+      .filter((f) => /\.mdx?$/.test(f) && !f.startsWith('_') && f.toLowerCase() !== 'readme.md');
 
     const posts = files
       .map((file) => this.parsePost(file))

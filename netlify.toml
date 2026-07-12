@@ -4,30 +4,13 @@
 [build]
   command = "npm run build"
   publish = ".next"
-  # Decap CMS GitHub-OAuth login handlers live here.
-  functions = "netlify/functions"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
 # ─────────────────────────────────────────────────────────────
-# Clean OAuth URLs for the Decap CMS GitHub login flow.
-# These map to netlify/functions/auth.js and callback.js.
-# ─────────────────────────────────────────────────────────────
-[[redirects]]
-  from = "/oauth/auth"
-  to = "/.netlify/functions/auth"
-  status = 200
-
-[[redirects]]
-  from = "/oauth/callback"
-  to = "/.netlify/functions/callback"
-  status = 200
-
-# ─────────────────────────────────────────────────────────────
 # Security headers — applied to every response.
-# CSP is intentionally strict. Decap CMS (/admin) + Netlify Identity
-# need a slightly looser policy, handled by its own block below.
+# Content is authored via Git (PRs); there is no admin panel to loosen for.
 # ─────────────────────────────────────────────────────────────
 [[headers]]
   for = "/*"
@@ -40,33 +23,18 @@
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'unsafe-inline' https://identity.netlify.com;
+      script-src 'self' 'unsafe-inline';
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https:;
       media-src 'self' https:;
       font-src 'self' data:;
-      connect-src 'self' https://identity.netlify.com https://api.netlify.com;
+      connect-src 'self';
       frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com;
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
       object-src 'none';
       upgrade-insecure-requests;
-    """
-
-# Decap CMS admin panel needs to talk to GitHub + Netlify Identity/Git Gateway.
-[[headers]]
-  for = "/admin/*"
-  [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
-    Content-Security-Policy = """
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com;
-      style-src 'self' 'unsafe-inline' https://unpkg.com;
-      img-src 'self' data: blob: https:;
-      font-src 'self' data: https:;
-      connect-src 'self' https://api.github.com https://api.netlify.com https://identity.netlify.com;
-      frame-src 'self';
     """
 
 # Long-cache immutable static assets.

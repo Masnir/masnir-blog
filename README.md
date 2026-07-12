@@ -10,19 +10,19 @@ statically-generated blog built with Next.js, deployed to Netlify at
 
 ## Tech stack
 
-| Concern           | Choice                                                |
-| ----------------- | ----------------------------------------------------- |
-| Framework         | Next.js (App Router) + React 19                       |
-| Language          | TypeScript (strict)                                   |
-| Styling           | Tailwind CSS, token-driven theme                      |
-| Content           | MDX files in Git (`content/posts`)                    |
-| Admin             | Decap CMS (`/admin`) + Netlify Identity + Git Gateway |
-| Animation         | Framer Motion (subtle, reduced-motion aware)          |
-| Code highlighting | Shiki via `rehype-pretty-code`                        |
-| Math              | KaTeX via `remark-math` / `rehype-katex`              |
-| Search            | Client-side, build-time index (no backend)            |
-| Hosting           | Netlify (`@netlify/plugin-nextjs`)                    |
-| Quality           | ESLint, Prettier, Husky + lint-staged                 |
+| Concern           | Choice                                         |
+| ----------------- | ---------------------------------------------- |
+| Framework         | Next.js (App Router) + React 19                |
+| Language          | TypeScript (strict)                            |
+| Styling           | Tailwind CSS, token-driven theme               |
+| Content           | MDX files in Git (`content/posts`)             |
+| Publishing        | Git-based — MDX files via GitHub Pull Requests |
+| Animation         | Framer Motion (subtle, reduced-motion aware)   |
+| Code highlighting | Shiki via `rehype-pretty-code`                 |
+| Math              | KaTeX via `remark-math` / `rehype-katex`       |
+| Search            | Client-side, build-time index (no backend)     |
+| Hosting           | Netlify (`@netlify/plugin-nextjs`)             |
+| Quality           | ESLint, Prettier, Husky + lint-staged          |
 
 ---
 
@@ -34,7 +34,9 @@ Content lives as MDX files in this repo and is rendered at build time (SSG). Thi
 - **Speed** — every page is pre-rendered static HTML → Lighthouse 95+ is achievable.
 - **Security** — no database means no SQL/NoSQL attack surface; strict CSP + security headers.
 - **Version history** — every edit is a Git commit (native, free).
-- **Easy publishing** — editors use Decap CMS at `/admin` (no code editing required).
+- **Reviewable publishing** — authors add an MDX file and open a Pull Request; a
+  maintainer reviews the Netlify Deploy Preview and approves. See
+  [`content/posts/README.md`](content/posts/README.md).
 
 The app never reads the filesystem directly. All content flows through a storage-agnostic
 [`ContentSource`](src/lib/content/ContentSource.ts) interface, implemented today by
@@ -47,15 +49,13 @@ The app never reads the filesystem directly. All content flows through a storage
 ## System architecture
 
 ```
-                         ┌─────────────────────────────┐
-        Editor ──/admin──▶│  Decap CMS (Netlify Identity │
-                         │  + Git Gateway)              │
-                         └──────────────┬──────────────┘
-                                        │ commits MDX
+        Author ──▶ adds MDX file + opens Pull Request
+                                        │
                                         ▼
    content/posts/*.mdx  ─────▶  GitHub repo (Masnir/masnir-blog)
    content/authors/*.md                 │
-                                        │ push triggers build
+                        PR Deploy Preview│  ← maintainer reviews & approves
+                                        │  merge to main triggers build
                                         ▼
                          ┌─────────────────────────────┐
                          │   Netlify build              │
@@ -79,13 +79,12 @@ The app never reads the filesystem directly. All content flows through a storage
 ## Project structure
 
 ```
-content/            # Git-based content (edited via CMS or directly)
-  posts/            # *.mdx articles
+content/            # Git-based content (edited via GitHub PRs)
+  posts/            # *.mdx articles (+ README.md guide, _TEMPLATE.mdx)
   authors/          # author profiles
   config/           # site.ts, categories.ts (taxonomy + site config)
 public/
-  admin/            # Decap CMS (index.html + config.yml)
-  uploads/          # media committed by the CMS
+  uploads/          # article images (committed to the repo)
 src/
   app/              # App Router
     (site)/         # public pages (share Header/Footer layout)
@@ -153,31 +152,31 @@ npm run typecheck    # tsc --noEmit
 npm run format       # Prettier write
 ```
 
-### Editing content locally (no auth)
+### Previewing content locally
 
-Run the Decap local backend in one terminal and the dev server in another:
-
-```bash
-npx decap-server      # terminal 1
-npm run dev           # terminal 2 → open http://localhost:3000/admin
-```
-
-`local_backend: true` in `public/admin/config.yml` routes the CMS to your working tree.
+Add or edit an `.mdx` file under `content/posts/`, then run `npm run dev` — drafts are
+shown locally (they're only hidden in the production build).
 
 ---
 
-## Publishing an article (non-technical)
+## Publishing an article
 
-1. Go to **blog.masnir.site/admin** and log in (Netlify Identity).
-2. Click **Articles → New Article**.
-3. Fill in Title, Excerpt, Category, Tags, Author, Cover Image, and the body.
-4. Leave **Draft** on to keep working; the editorial workflow tracks
-   **Draft → In Review → Ready**.
-5. When ready, set **Draft** off (or publish from the workflow). Decap commits to GitHub,
-   Netlify rebuilds, and the article goes live in ~1–2 minutes.
+Articles are plain MDX files committed via GitHub Pull Requests. Full step-by-step
+instructions (fields, categories, images, the PR flow) live in
+**[`content/posts/README.md`](content/posts/README.md)**, with a ready-to-copy
+**[`content/posts/_TEMPLATE.mdx`](content/posts/_TEMPLATE.mdx)**.
 
-Drafts never appear on the live site. Scheduled publishing is supported via the editorial
-workflow plus a scheduled Netlify build (see below).
+In short:
+
+1. Copy `_TEMPLATE.mdx` → rename to `your-article-slug.mdx` (the name becomes the URL).
+2. Fill in the frontmatter (title, excerpt, category, tags, author, publishedAt).
+3. Write the body in Markdown; put any images in `public/uploads/` and reference them
+   as `/uploads/...`.
+4. Open a **Pull Request** → review the Netlify **Deploy Preview** → approve → merge.
+5. Live in ~1–2 minutes. Set `draft: true` to keep a post hidden even after merge.
+
+Access control is via GitHub: protect `main` to require PR approval, and add authors as
+repo collaborators. Files named `_*.mdx` and `README.md` are ignored by the site.
 
 ### Authoring features available in MDX
 
@@ -199,13 +198,11 @@ table of contents.
 3. **Environment variables** (Site settings → Environment):
    - `NEXT_PUBLIC_SITE_URL = https://blog.masnir.site`
    - (later) newsletter/contact provider keys — see `.env.example`.
-4. **Enable Netlify Identity**: Site settings → Identity → _Enable Identity_.
-   - Registration: **Invite only** (recommended).
-   - Services → **Git Gateway**: _Enable_ (lets the CMS commit to GitHub).
-   - Invite yourself as a user; accept the email invite to set a password.
+4. **Protect `main`** (GitHub): Repo → Settings → Branches → require a pull request and
+   at least one approval before merging. This is how publishing is reviewed.
 5. **Custom domain**: add `blog.masnir.site` and point DNS (CNAME to the Netlify site, or
    Netlify DNS). HTTPS is provisioned automatically.
-6. **Deploy**: push to `main` → Netlify builds and publishes.
+6. **Deploy**: merge to `main` → Netlify builds and publishes.
 
 ### Scheduled publishing (optional)
 

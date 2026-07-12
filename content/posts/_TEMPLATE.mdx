@@ -1,0 +1,157 @@
+---
+# ─────────────────────────────────────────────────────────────
+# ARTICLE TEMPLATE — copy this file to start a new post.
+# Rename it to something like: my-article-title.mdx
+# (lowercase, hyphens, no spaces — the name becomes the URL.)
+# See README.md in this folder for full step-by-step instructions.
+# ─────────────────────────────────────────────────────────────
+
+# REQUIRED — the headline of your article.
+title: 'Your Article Title Goes Here'
+
+# OPTIONAL — a single line shown under the title.
+subtitle: 'A short, punchy subtitle that adds context.'
+
+# REQUIRED — 1–2 sentence summary used in listings, search, and social cards.
+excerpt: 'A concise summary of what this article covers and why it matters.'
+
+# REQUIRED — pick ONE category slug (full list in README.md).
+category: 'tutorials'
+
+# REQUIRED — lowercase, hyphenated tags. New tags get their own page automatically.
+tags: ['example', 'getting-started']
+
+# REQUIRED — author slug. Use 'masnir-team' unless another author file exists.
+author: 'masnir-team'
+
+# OPTIONAL — cover image. Upload the file to public/uploads/ first.
+# coverImage: '/uploads/my-cover.png'
+# coverImageAlt: 'Describe the cover image for accessibility and SEO.'
+
+# REQUIRED — publish date, format YYYY-MM-DD.
+publishedAt: '2026-07-12'
+
+# OPTIONAL — last-updated date (same format). Add when you revise a post.
+# updatedAt: '2026-07-20'
+
+# REQUIRED — true = hidden from the live site (work in progress).
+#            false = published/live.
+draft: true
+
+# OPTIONAL — surface this post in homepage sections.
+featured: false
+popular: false
+---
+
+Start with a short intro paragraph. Write in **Markdown** — this is where the article
+body begins (everything below the closing `---` above).
+
+## Use H2 headings for main sections
+
+Every `##` and `###` heading automatically appears in the article's Table of Contents,
+so structure your article with them.
+
+### And H3 for subsections
+
+You can use **bold**, _italic_, `inline code`, and [links](https://masnir.site).
+External links open in a new tab automatically; internal links like [the blog](/blog)
+use fast client-side navigation.
+
+- Bullet lists work
+- Like this
+
+1. And numbered lists
+2. Like this
+
+## Callout boxes
+
+Use these to highlight important information:
+
+<Note>This is a general note for extra context.</Note>
+
+<Tip title="Pro tip">A helpful suggestion the reader can act on.</Tip>
+
+<Warning title="Be careful">Something the reader should watch out for.</Warning>
+
+<Info>Neutral, informational aside.</Info>
+
+<Danger title="Critical">A serious warning about a dangerous action.</Danger>
+
+## Code blocks
+
+Add a language after the opening backticks for syntax highlighting. You can also add a
+`title` and highlight specific lines with `{2-3}`:
+
+```typescript title="example.ts" {2}
+function greet(name: string) {
+  return `Hello, ${name}!`; // this line is highlighted
+}
+```
+
+## Images
+
+Upload the image to `public/uploads/` first, then reference it. Paths start with
+`/uploads/`. Basic image:
+
+![A short description of the image](/uploads/example.png)
+
+Or with a caption (recommended):
+
+<Figure
+  src="/uploads/example.png"
+  alt="A clear description of what the screenshot shows"
+  caption="Figure 1: An example screenshot"
+/>
+
+An image gallery:
+
+<Gallery
+  images={[
+    { src: '/uploads/shot-1.png', alt: 'First screenshot', caption: 'Step one' },
+    { src: '/uploads/shot-2.png', alt: 'Second screenshot', caption: 'Step two' },
+  ]}
+/>
+
+## Video
+
+Embed a YouTube video by its ID (privacy-friendly, lazy-loaded):
+
+<Video youtube="dQw4w9WgXcQ" title="Explainer video" caption="An optional caption" />
+
+## Collapsible section
+
+Hide long details behind a toggle:
+
+<Collapsible title="Click to expand the details">
+
+Any content can go inside — text, lists, even code blocks.
+
+</Collapsible>
+
+## Tables
+
+| Feature           | Supported |
+| ----------------- | --------- |
+| Headings & TOC    | ✅        |
+| Code highlighting | ✅        |
+| Images & video    | ✅        |
+| Math              | ✅        |
+
+## Math (optional)
+
+Inline math like $E = mc^2$, or a block equation:
+
+$$
+R = P_{\text{event}} \times I_{\text{impact}}
+$$
+
+## References (optional)
+
+<References
+  items={[
+    { title: 'Example Source One', url: 'https://example.com/one' },
+    { title: 'Example Source Two', url: 'https://example.com/two', author: 'Author Name' },
+  ]}
+/>
+
+Finish with a short conclusion that summarizes the key takeaway for the reader.
