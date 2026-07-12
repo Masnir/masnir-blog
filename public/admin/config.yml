@@ -1,0 +1,161 @@
+# ─────────────────────────────────────────────────────────────
+# Decap CMS configuration for Masnir Blog
+#
+# Backend: git-gateway + Netlify Identity — editors log in at /admin and their
+# changes are committed to the GitHub repo. No database required.
+#
+# Editorial workflow gives Draft → In Review → Ready states (drafts + scheduling).
+# For LOCAL editing without auth, run `npx decap-server` and set
+# `local_backend: true` (already enabled below; it's ignored in production).
+# ─────────────────────────────────────────────────────────────
+
+backend:
+  name: git-gateway
+  branch: main
+
+# Enables `npx decap-server` for local, no-auth editing during development.
+local_backend: true
+
+# Draft → review → publish workflow (also underpins scheduled publishing).
+publish_mode: editorial_workflow
+
+# Uploaded media is committed to the repo and served statically.
+media_folder: 'public/uploads'
+public_folder: '/uploads'
+
+# Show a live preview using the site's own styles where possible.
+site_url: https://blog.masnir.site
+display_url: https://blog.masnir.site
+logo_url: /favicon.svg
+
+collections:
+  # ── Articles ──────────────────────────────────────────────
+  - name: 'posts'
+    label: 'Articles'
+    label_singular: 'Article'
+    folder: 'content/posts'
+    create: true
+    slug: '{{slug}}' # auto slug from title
+    extension: 'mdx'
+    format: 'frontmatter'
+    preview_path: 'blog/{{slug}}'
+    summary: '{{title}} — {{publishedAt}}'
+    sortable_fields: ['publishedAt', 'title', 'category']
+    fields:
+      - { name: 'title', label: 'Title', widget: 'string', hint: 'Slug is generated from this.' }
+      - { name: 'subtitle', label: 'Subtitle', widget: 'string', required: false }
+      - {
+          name: 'excerpt',
+          label: 'Excerpt',
+          widget: 'text',
+          hint: 'Short summary used in listings, SEO, and social cards.',
+        }
+      - {
+          name: 'category',
+          label: 'Category',
+          widget: 'select',
+          options:
+            [
+              { label: 'Cloud Security', value: 'cloud-security' },
+              { label: 'AWS', value: 'aws' },
+              { label: 'Azure', value: 'azure' },
+              { label: 'OCI', value: 'oci' },
+              { label: 'DevSecOps', value: 'devsecops' },
+              { label: 'Application Security', value: 'application-security' },
+              { label: 'API Security', value: 'api-security' },
+              { label: 'Kubernetes', value: 'kubernetes' },
+              { label: 'Threat Intelligence', value: 'threat-intelligence' },
+              { label: 'Identity & Access Management', value: 'iam' },
+              { label: 'Zero Trust', value: 'zero-trust' },
+              { label: 'AI Security', value: 'ai-security' },
+              { label: 'Vehicle Cybersecurity', value: 'vehicle-cybersecurity' },
+              { label: 'Automotive Security', value: 'automotive-security' },
+              { label: 'Research', value: 'research' },
+              { label: 'Tutorials', value: 'tutorials' },
+              { label: 'Opinion', value: 'opinion' },
+              { label: 'News', value: 'news' },
+            ],
+        }
+      - { name: 'tags', label: 'Tags', widget: 'list', default: [], hint: 'e.g. iam, s3, llm.' }
+      - {
+          name: 'author',
+          label: 'Author',
+          widget: 'relation',
+          collection: 'authors',
+          search_fields: ['name'],
+          value_field: '{{slug}}',
+          display_fields: ['name'],
+        }
+      - { name: 'coverImage', label: 'Cover Image', widget: 'image', required: false }
+      - {
+          name: 'coverImageAlt',
+          label: 'Cover Image Alt Text',
+          widget: 'string',
+          required: false,
+          hint: 'Describe the image for accessibility/SEO.',
+        }
+      - { name: 'publishedAt', label: 'Publish Date', widget: 'datetime' }
+      - {
+          name: 'updatedAt',
+          label: 'Last Updated',
+          widget: 'datetime',
+          required: false,
+        }
+      - {
+          name: 'draft',
+          label: 'Draft',
+          widget: 'boolean',
+          default: true,
+          hint: 'Drafts are hidden on the live site.',
+        }
+      - { name: 'featured', label: 'Featured', widget: 'boolean', default: false }
+      - { name: 'popular', label: 'Popular', widget: 'boolean', default: false }
+      - {
+          name: 'seo',
+          label: 'SEO (optional overrides)',
+          widget: 'object',
+          required: false,
+          collapsed: true,
+          fields:
+            [
+              { name: 'title', label: 'SEO Title', widget: 'string', required: false },
+              { name: 'description', label: 'Meta Description', widget: 'text', required: false },
+              { name: 'ogImage', label: 'Social Image', widget: 'image', required: false },
+              { name: 'canonical', label: 'Canonical URL', widget: 'string', required: false },
+              { name: 'noindex', label: 'No-index', widget: 'boolean', default: false },
+            ],
+        }
+      - {
+          name: 'body',
+          label: 'Body (Markdown / MDX)',
+          widget: 'markdown',
+          hint: 'Supports headings, code blocks, images, and custom components.',
+        }
+
+  # ── Authors ───────────────────────────────────────────────
+  - name: 'authors'
+    label: 'Authors'
+    label_singular: 'Author'
+    folder: 'content/authors'
+    create: true
+    slug: '{{slug}}'
+    extension: 'md'
+    format: 'frontmatter'
+    fields:
+      - { name: 'name', label: 'Name', widget: 'string' }
+      - { name: 'role', label: 'Role', widget: 'string', required: false }
+      - { name: 'avatar', label: 'Avatar', widget: 'image', required: false }
+      - { name: 'bio', label: 'Bio', widget: 'text' }
+      - {
+          name: 'links',
+          label: 'Links',
+          widget: 'object',
+          required: false,
+          fields:
+            [
+              { name: 'website', label: 'Website', widget: 'string', required: false },
+              { name: 'twitter', label: 'Twitter/X', widget: 'string', required: false },
+              { name: 'github', label: 'GitHub', widget: 'string', required: false },
+              { name: 'linkedin', label: 'LinkedIn', widget: 'string', required: false },
+            ],
+        }

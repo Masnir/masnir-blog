@@ -1,0 +1,60 @@
+# Netlify configuration for Masnir Blog
+# Deploy target: blog.masnir.site
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# ─────────────────────────────────────────────────────────────
+# Security headers — applied to every response.
+# CSP is intentionally strict. Decap CMS (/admin) + Netlify Identity
+# need a slightly looser policy, handled by its own block below.
+# ─────────────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    X-DNS-Prefetch-Control = "on"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://identity.netlify.com;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob: https:;
+      media-src 'self' https:;
+      font-src 'self' data:;
+      connect-src 'self' https://identity.netlify.com https://api.netlify.com;
+      frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self';
+      object-src 'none';
+      upgrade-insecure-requests;
+    """
+
+# Decap CMS admin panel needs to talk to GitHub + Netlify Identity/Git Gateway.
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://identity.netlify.com https://unpkg.com;
+      style-src 'self' 'unsafe-inline' https://unpkg.com;
+      img-src 'self' data: blob: https:;
+      font-src 'self' data: https:;
+      connect-src 'self' https://api.github.com https://api.netlify.com https://identity.netlify.com;
+      frame-src 'self';
+    """
+
+# Long-cache immutable static assets.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

@@ -1,0 +1,106 @@
+---
+title: 'Securing Amazon S3: Beyond "Block Public Access"'
+subtitle: 'A practical walkthrough of bucket policies, IAM, and encryption for least-privilege S3.'
+excerpt: 'Blocking public access is table stakes. This tutorial covers the S3 controls that actually prevent data exposure — scoped bucket policies, VPC endpoints, and default encryption.'
+category: 'aws'
+tags: ['aws', 's3', 'iam', 'cloud-security']
+author: 'masnir-team'
+publishedAt: '2026-06-28'
+draft: false
+featured: false
+popular: true
+---
+
+Most S3 data-exposure incidents don't come from a single misconfigured toggle — they
+come from **overly broad policies** that accumulate over time. Let's build a
+least-privilege posture step by step.
+
+## Start with account-level guardrails
+
+Enable **S3 Block Public Access at the account level**, not just per bucket. This is a
+backstop that prevents an accidental public ACL from ever taking effect.
+
+<Tip>
+  Account-level Block Public Access overrides bucket-level settings. Turn it on first, then grant
+  narrow exceptions only where genuinely required (and there usually aren't any).
+</Tip>
+
+## Write bucket policies that deny by default
+
+A good bucket policy is mostly `Deny` statements. Here's a policy that enforces TLS and
+denies any unencrypted upload:
+
+```json title="bucket-policy.json" showLineNumbers
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyInsecureTransport",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": ["arn:aws:s3:::my-bucket", "arn:aws:s3:::my-bucket/*"],
+      "Condition": { "Bool": { "aws:SecureTransport": "false" } }
+    },
+    {
+      "Sid": "DenyUnEncryptedUploads",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::my-bucket/*",
+      "Condition": {
+        "StringNotEquals": { "s3:x-amz-server-side-encryption": "aws:kms" }
+      }
+    }
+  ]
+}
+```
+
+## Scope IAM to specific prefixes
+
+Grant access to _paths_, not whole buckets. Inline `Condition` keys make this precise:
+
+```json title="scoped-iam.json" {8-12}
+{
+  "Effect": "Allow",
+  "Action": ["s3:GetObject", "s3:PutObject"],
+  "Resource": "arn:aws:s3:::my-bucket/team-a/*",
+  "Condition": {
+    "StringLike": {
+      "s3:prefix": ["team-a/*"]
+    }
+  }
+}
+```
+
+<Callout type="danger" title="Watch for wildcard drift">
+  A policy that starts as `team-a/*` often becomes `*` after a "temporary" debugging session. Review
+  IAM policies in code review and with automated scanners like IAM Access Analyzer.
+</Callout>
+
+## Keep traffic off the public internet
+
+For internal workloads, use a **VPC Gateway Endpoint** for S3 so requests never traverse
+the public internet, and pair it with a bucket policy that only allows access from that
+endpoint.
+
+<Note title="Defense in depth">
+  Endpoint policies + bucket policies + IAM = three independent layers. An attacker must defeat all
+  three, not just one.
+</Note>
+
+## Verification checklist
+
+<Collapsible title="Pre-production S3 checklist" defaultOpen={false}>
+
+- Account-level Block Public Access: **on**
+- Default encryption (SSE-KMS): **on**
+- Bucket policy denies non-TLS and unencrypted PUTs
+- IAM scoped to prefixes, no `s3:*` on `*`
+- Access logging + CloudTrail data events enabled
+- IAM Access Analyzer finding review: **clean**
+
+</Collapsible>
+
+Least privilege on S3 isn't one setting — it's a set of independent controls that each
+assume the others might fail.

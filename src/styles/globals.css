@@ -1,0 +1,104 @@
+@import './tokens.css';
+@import 'katex/dist/katex.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Offset anchor jumps so headings aren't hidden under the sticky header. */
+    scroll-padding-top: 5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg font-sans text-fg antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Consistent, visible focus for keyboard users (token-driven). */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-bg;
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::selection {
+    @apply bg-accent/25 text-fg;
+  }
+}
+
+@layer components {
+  /* Page/section container. */
+  .container-site {
+    @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Skip-to-content link for keyboard/screen-reader users. */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-fg;
+  }
+
+  /* Subtle grid/glow background used on the hero. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 3rem 3rem;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+  }
+}
+
+/* rehype-pretty-code / Shiki: theme-aware code blocks driven by tokens. */
+@layer components {
+  pre[data-theme],
+  code[data-theme] {
+    @apply bg-bg-subtle;
+  }
+
+  pre code {
+    display: grid;
+    counter-reset: line;
+  }
+
+  /* Show line numbers when a code block opts in with showLineNumbers. */
+  code[data-line-numbers] > [data-line]::before {
+    counter-increment: line;
+    content: counter(line);
+    @apply mr-4 inline-block w-4 text-right text-muted;
+  }
+
+  [data-line] {
+    @apply px-4;
+  }
+
+  /* Highlighted lines & words. */
+  [data-highlighted-line] {
+    @apply bg-accent/10;
+    border-left: 2px solid hsl(var(--accent));
+  }
+
+  [data-highlighted-chars] {
+    @apply rounded bg-accent/20 px-1;
+  }
+
+  figcaption[data-rehype-pretty-code-title] {
+    @apply rounded-t-md border border-b-0 border-border bg-bg-subtle px-4 py-2 font-mono text-xs text-muted;
+  }
+}

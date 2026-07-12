@@ -1,0 +1,90 @@
+---
+title: 'Threat Modeling the CAN Bus in Modern Vehicles'
+subtitle: 'How an inherently trusting protocol becomes an attack surface — and what to do about it.'
+excerpt: 'The CAN bus was designed for reliability, not security. We walk through its trust model, realistic attack paths, and the defensive controls automakers are adopting.'
+category: 'automotive-security'
+tags: ['can-bus', 'automotive', 'threat-intelligence', 'zero-trust']
+author: 'masnir-team'
+publishedAt: '2026-06-15'
+draft: false
+featured: true
+popular: false
+---
+
+The Controller Area Network (CAN) bus is the nervous system of nearly every modern
+vehicle. It was designed in the 1980s for **reliability and real-time performance** —
+security was never part of the requirements. That gap is now a serious attack surface.
+
+## The core problem: implicit trust
+
+On a classic CAN bus, any node can send any message, and every node trusts every
+message. There is no authentication and no sender identity.
+
+<Callout type="warning" title="No source authentication">
+  A compromised infotainment unit can broadcast frames that a braking ECU will happily act on,
+  because the braking ECU has no way to know who actually sent them.
+</Callout>
+
+## A realistic attack path
+
+Attacks rarely start at the braking ECU. They start at the most exposed, least-critical
+component and pivot inward.
+
+1. Compromise an internet-facing component (telematics, infotainment).
+2. Pivot onto the CAN bus the component shares with critical ECUs.
+3. Inject or replay frames to influence vehicle behavior.
+
+<Note>
+  This is why **network segmentation** inside the vehicle — gateways between domains — is one of the
+  highest-leverage controls available.
+</Note>
+
+## Defensive controls
+
+### 1. Domain segmentation with a central gateway
+
+Split the vehicle network into domains (powertrain, chassis, body, infotainment) with a
+gateway that filters which messages may cross between them.
+
+### 2. Message authentication (CAN MAC / SecOC)
+
+AUTOSAR's **Secure Onboard Communication (SecOC)** adds a truncated MAC and freshness
+value to critical frames, defeating naive injection and replay.
+
+```c title="secoc-verify.c" showLineNumbers
+// Simplified: verify a MAC + freshness value before acting on a frame.
+bool secoc_accept(const Frame *f) {
+    if (!freshness_is_valid(f->fv))      return false; // anti-replay
+    uint8_t mac[MAC_LEN];
+    compute_mac(f->id, f->data, f->fv, mac);
+    return constant_time_eq(mac, f->mac, MAC_LEN);      // anti-spoof
+}
+```
+
+<Tip title="Constant-time comparison">
+  Always compare MACs in constant time. A timing side channel on the comparison can leak the valid
+  MAC byte by byte.
+</Tip>
+
+### 3. Intrusion detection on the bus
+
+A CAN IDS models normal timing and message frequency and flags anomalies — an ECU
+suddenly sending frames it never sends, or at an impossible rate.
+
+## Prioritizing the work
+
+| Control                     | Effort | Risk reduction      |
+| --------------------------- | ------ | ------------------- |
+| Domain gateway segmentation | Medium | High                |
+| SecOC on critical frames    | High   | High                |
+| CAN IDS                     | Medium | Medium              |
+| Secure boot on ECUs         | High   | High (foundational) |
+
+<Callout type="info" title="Standards to know">
+  ISO/SAE 21434 (road-vehicle cybersecurity engineering) and UNECE WP.29 R155 now make much of this
+  mandatory for new vehicle type approvals.
+</Callout>
+
+The CAN bus won't be redesigned overnight, so automotive security is about **adding
+trust to a trustless protocol** — segment aggressively, authenticate the frames that
+matter, and monitor everything.
