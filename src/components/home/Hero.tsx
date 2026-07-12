@@ -1,16 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, ShieldIcon } from '@/components/ui/icons';
 import { fadeUp, staggerContainer } from '@/lib/animations';
 import { siteConfig } from '@/content/config/site';
+import { siteImages } from '@/content/config/images';
 
 /** Landing hero: headline, subhead, CTAs over a subtle grid glow. */
 export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-border">
+      {/* Decorative photo backdrop (cyber cubes) — dimmed so text stays legible. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <Image
+          src={siteImages.hero}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-20 dark:opacity-30"
+        />
+        {/* Wash the photo toward the theme bg so it reads as texture, not a photo. */}
+        <div className="absolute inset-0 bg-gradient-to-b from-bg/70 via-bg/80 to-bg" />
+      </div>
       {/* Decorative grid + accent glow (token-driven). */}
       <div aria-hidden className="bg-grid pointer-events-none absolute inset-0" />
       <div

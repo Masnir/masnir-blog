@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/blog/PageHeader';
 import { CategoryGrid } from '@/components/home/CategoryGrid';
 import { categories } from '@/content/config/categories';
 import { siteConfig } from '@/content/config/site';
+import { siteImages } from '@/content/config/images';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = buildMetadata({
@@ -15,7 +16,11 @@ export const metadata: Metadata = buildMetadata({
 export default function AboutPage() {
   return (
     <>
-      <PageHeader title={`About ${siteConfig.name}`} description={siteConfig.tagline} />
+      <PageHeader
+        title={`About ${siteConfig.name}`}
+        description={siteConfig.tagline}
+        image={siteImages.about}
+      />
       <Container>
         <div className="mx-auto max-w-prose py-14">
           <div className="prose prose-lg">

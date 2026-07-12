@@ -1,7 +1,7 @@
 ---
 name: Masnir Security Team
 role: Research & Engineering
-avatar: /uploads/authors/masnir-team.svg
+avatar: /brand/mark-dark.png
 bio: The Masnir Security Team researches and secures modern cloud, AI, and automotive systems. We publish field-tested tutorials, original research, and honest analysis.
 links:
   website: https://masnir.site

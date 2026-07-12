@@ -1,19 +1,38 @@
 import Link from 'next/link';
-import { ShieldIcon } from '@/components/ui/icons';
+import Image from 'next/image';
 import { siteConfig } from '@/content/config/site';
 
-/** Wordmark + shield glyph. Uses accent token so it re-themes automatically. */
+/**
+ * Brand logo — theme-aware Masnir SVG lockups, served locally for instant,
+ * every-page rendering. Light/dark variants are swapped via CSS `dark:`
+ * visibility (no theme flash, works in a server component).
+ *
+ * The source SVGs carry a solid background rect, so we clip each into a
+ * rounded badge — the fill reads as an intentional logo tile rather than a
+ * stray rectangle on the near-black header.
+ */
 export function Logo({ className }: { className?: string }) {
   return (
     <Link href="/" className={className} aria-label={`${siteConfig.name} — home`}>
-      <span className="inline-flex items-center gap-2">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
-          <ShieldIcon className="h-5 w-5" />
-        </span>
-        <span className="text-lg font-semibold tracking-tight text-fg">
-          {siteConfig.name}
-          <span className="text-accent">.</span>
-        </span>
+      <span className="inline-flex overflow-hidden rounded-lg">
+        {/* Light-mode logo (hidden in dark) */}
+        <Image
+          src="/brand/masnir-logo-light.svg"
+          alt={`${siteConfig.name} logo`}
+          width={81}
+          height={100}
+          priority
+          className="h-10 w-auto dark:hidden"
+        />
+        {/* Dark-mode logo (hidden in light) */}
+        <Image
+          src="/brand/masnir-logo-dark.svg"
+          alt={`${siteConfig.name} logo`}
+          width={81}
+          height={100}
+          priority
+          className="hidden h-10 w-auto dark:block"
+        />
       </span>
     </Link>
   );

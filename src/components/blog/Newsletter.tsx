@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { ArrowRightIcon, CheckIcon } from '@/components/ui/icons';
+import { siteImages } from '@/content/config/images';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -41,8 +43,19 @@ export function Newsletter() {
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-bg-subtle p-8 sm:p-10">
-      <div className="mx-auto max-w-xl text-center">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-subtle p-8 sm:p-10">
+      {/* Decorative aspirational backdrop, heavily washed for text legibility. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <Image
+          src={siteImages.newsletter}
+          alt=""
+          fill
+          sizes="(max-width: 768px) 100vw, 900px"
+          className="object-cover opacity-15 dark:opacity-20"
+        />
+        <div className="absolute inset-0 bg-bg-subtle/80" />
+      </div>
+      <div className="relative mx-auto max-w-xl text-center">
         <h2 className="text-2xl font-semibold text-fg sm:text-3xl">
           Stay ahead of the threat curve
         </h2>

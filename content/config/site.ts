@@ -15,7 +15,7 @@ export const siteConfig = {
   organization: {
     name: 'Masnir',
     url: 'https://masnir.site',
-    logo: '/images/masnir-logo.png',
+    logo: '/brand/masnir-logo-dark.png',
   },
   social: {
     twitter: '@masnir',

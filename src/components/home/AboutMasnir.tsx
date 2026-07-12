@@ -1,5 +1,5 @@
+import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
-import { ShieldIcon } from '@/components/ui/icons';
 import { siteConfig } from '@/content/config/site';
 
 /** "About Masnir" band for the homepage. */
@@ -11,9 +11,22 @@ export function AboutMasnir() {
         className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/10 blur-3xl"
       />
       <div className="relative max-w-2xl">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-          <ShieldIcon className="h-6 w-6" />
-        </span>
+        <>
+          <Image
+            src="/brand/masnir-logo-light.svg"
+            alt={`${siteConfig.name} logo`}
+            width={130}
+            height={160}
+            className="h-20 w-auto rounded-lg dark:hidden"
+          />
+          <Image
+            src="/brand/masnir-logo-dark.svg"
+            alt={`${siteConfig.name} logo`}
+            width={130}
+            height={160}
+            className="hidden h-20 w-auto rounded-lg dark:block"
+          />
+        </>
         <h2 className="mt-4 text-2xl font-semibold text-fg sm:text-3xl">About {siteConfig.name}</h2>
         <p className="mt-3 text-muted">
           {siteConfig.name} is a cybersecurity company focused on securing modern cloud, AI, and

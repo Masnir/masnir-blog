@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
-  <rect width="96" height="96" rx="20" fill="#0a0f1a"/>
-  <path d="M48 20l20 7v18c0 16-20 26-20 26S28 61 28 45V27l20-7z" fill="none" stroke="#22d3ee" stroke-width="4" stroke-linejoin="round"/>
-  <text x="48" y="56" font-family="sans-serif" font-size="22" font-weight="700" fill="#22d3ee" text-anchor="middle">M</text>
-</svg>
