@@ -1,8 +1,10 @@
 # ─────────────────────────────────────────────────────────────
 # Decap CMS configuration for Masnir Blog
 #
-# Backend: git-gateway + Netlify Identity — editors log in at /admin and their
-# changes are committed to the GitHub repo. No database required.
+# Backend: GitHub OAuth. Editors log in with GitHub at /admin and their changes
+# are committed to this repo. (Netlify Identity is deprecated for new sites, so
+# we use GitHub directly via the OAuth functions in netlify/functions/.)
+# No database required.
 #
 # Editorial workflow gives Draft → In Review → Ready states (drafts + scheduling).
 # For LOCAL editing without auth, run `npx decap-server` and set
@@ -10,8 +12,12 @@
 # ─────────────────────────────────────────────────────────────
 
 backend:
-  name: git-gateway
+  name: github
+  repo: Masnir/masnir-blog
   branch: main
+  # Clean URLs mapped to the Netlify OAuth functions (see netlify.toml redirects).
+  base_url: https://blog.masnir.site
+  auth_endpoint: /oauth/auth
 
 # Enables `npx decap-server` for local, no-auth editing during development.
 local_backend: true

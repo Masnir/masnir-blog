@@ -4,9 +4,25 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  # Decap CMS GitHub-OAuth login handlers live here.
+  functions = "netlify/functions"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# ─────────────────────────────────────────────────────────────
+# Clean OAuth URLs for the Decap CMS GitHub login flow.
+# These map to netlify/functions/auth.js and callback.js.
+# ─────────────────────────────────────────────────────────────
+[[redirects]]
+  from = "/oauth/auth"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/oauth/callback"
+  to = "/.netlify/functions/callback"
+  status = 200
 
 # ─────────────────────────────────────────────────────────────
 # Security headers — applied to every response.
