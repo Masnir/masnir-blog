@@ -12,6 +12,11 @@ export function MdxContent({ source }: { source: string }) {
       source={source}
       components={mdxComponents}
       options={{
+        // MDX is authored by trusted editors via Git (see lib/mdx/plugins.ts),
+        // so keep JS expression props like `<References items={[...]} />`.
+        // next-mdx-remote strips them by default (blockJS) as an untrusted-input
+        // safeguard, which nukes any `prop={...}` and breaks such components.
+        blockJS: false,
         mdxOptions: {
           remarkPlugins: [...mdxOptions.remarkPlugins],
           // Cast: plugin option tuples are validated at runtime by the pipeline.

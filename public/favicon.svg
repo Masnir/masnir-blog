@@ -1,13 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<svg width="370" height="370" viewBox="65 30 370 370" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="m" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1e3a8a"/>
-      <stop offset="1" stop-color="#22d3ee"/>
-    </linearGradient>
+    <clipPath id="circleClip">
+      <circle cx="250" cy="215" r="185"/>
+    </clipPath>
   </defs>
-  <rect width="32" height="32" rx="7" fill="#0a0f1a"/>
-  <!-- Stylised "M" mark: two outer legs + central V -->
-  <path d="M7 23V11h3v12z" fill="#1e293b"/>
-  <path d="M22 23V11h3v12z" fill="#1e293b"/>
-  <path d="M7 9l9 9 9-9-3-1-6 6-6-6z" fill="url(#m)"/>
+
+  <!-- Icon backdrop -->
+  <circle cx="250" cy="215" r="185" fill="#FFFFFF" stroke="#EAEBEC" stroke-width="1.5"/>
+
+  <!-- Mountain emblem (Masnir brand mark) -->
+  <g clip-path="url(#circleClip)">
+    <polygon points="85,440 175,75 250,205 250,440" fill="#2C3E50" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"/>
+    <polygon points="250,440 250,205 325,75 415,440" fill="#C0392B" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"/>
+    <polygon points="120,440 200,150 250,235 250,440" fill="#24313F" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"/>
+    <polygon points="250,440 250,235 300,150 380,440" fill="#9C3327" stroke="#FFFFFF" stroke-width="9" stroke-linejoin="round"/>
+  </g>
 </svg>
