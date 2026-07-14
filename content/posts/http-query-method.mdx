@@ -1,0 +1,260 @@
+---
+title: 'The New HTTP QUERY Method: Safe, Idempotent Requests With a Body'
+subtitle: 'Why GET-with-a-body was always a hack, and how QUERY finally fixes it.'
+excerpt: 'HTTP QUERY is a new safe and idempotent method that carries a request body. Here is what it is, how it differs from GET and POST, and the real-world problems it solves for API developers.'
+category: 'api-security'
+tags: ['http', 'api-design', 'rest', 'web-standards']
+author: 'masnir-team'
+publishedAt: '2026-07-14'
+draft: false
+featured: false
+popular: false
+seo:
+  description: 'A detailed developer guide to the new HTTP QUERY method: what it is, when it was introduced, how it differs from GET and POST, and the problems it solves.'
+---
+
+For decades, sending a complex search request over HTTP forced developers into an
+uncomfortable choice: cram everything into a URL query string, or misuse `POST` for
+something that only reads data. The new **HTTP `QUERY`** method finally gives us a
+proper third option — a request that is **safe**, **idempotent**, _and_ carries a
+**request body**.
+
+This article walks through what `QUERY` is, when it appeared, how it compares to the
+methods you already know, and — most importantly — the concrete developer pain it
+removes.
+
+<Note>
+  `QUERY` is standardized through the IETF HTTP Working Group. It has moved from a long-running
+  draft toward a stable specification, and support is beginning to land in servers, proxies, and
+  client libraries. Treat it as "adopt with a fallback" rather than "assume everywhere" for now.
+</Note>
+
+## A quick timeline: where QUERY came from
+
+The idea is older than it looks. It first surfaced as `SEARCH` in the WebDAV world
+(RFC 5323, 2008), but that method was tightly coupled to WebDAV semantics and never
+saw broad general-purpose use.
+
+The modern effort — **"The HTTP QUERY Method"** — is an IETF HTTP Working Group draft
+(`draft-ietf-httpbis-safe-method-w-body`). It deliberately generalizes the concept:
+a safe, idempotent method with a body, usable by _any_ API, not just document stores.
+After years of iteration it reached working-group and IESG consensus and is being
+finalized as a standards-track RFC, which is why tooling support is now appearing.
+
+## The problem QUERY solves
+
+To understand why a new method was worth the effort, you have to feel the pain of the
+old approaches. Consider a search endpoint that accepts a rich, structured filter.
+
+### Approach 1 — GET with a huge query string
+
+The "correct" REST instinct is: reads use `GET`. So you serialize your filter into the
+URL.
+
+```http title="GET with query string"
+GET /products/search?category=shoes&color=red&color=blue&minPrice=50&maxPrice=200&sort=price_desc&inStock=true HTTP/1.1
+Host: api.example.com
+```
+
+This works until it doesn't. The problems pile up quickly:
+
+- **URL length limits.** There is no single spec limit, but proxies, CDNs, and servers
+  routinely cap URLs around 2–8 KB. A complex nested filter (think a saved dashboard
+  query or a GraphQL-style selection) blows past that.
+- **Encoding pain.** Nested objects and arrays have no canonical query-string
+  representation. Everyone reinvents `filter[color][]=red` or `filter=<url-encoded JSON>`,
+  and no two APIs agree.
+- **Sensitive data leaks into logs.** Query strings are captured in access logs, browser
+  history, proxy logs, and `Referer` headers. Putting a search token or PII in the URL is
+  a real security problem.
+
+<Warning title="URLs are not private">
+  Anything in a query string can end up in server logs, CDN logs, and analytics. Search payloads
+  frequently contain user identifiers or free-text that should never be logged in plaintext.
+</Warning>
+
+### Approach 2 — POST the query
+
+So developers give up on `GET` and `POST` the filter as a JSON body:
+
+```http title="POST as a workaround"
+POST /products/search HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{ "category": "shoes", "color": ["red", "blue"], "price": { "min": 50, "max": 200 } }
+```
+
+The body problem is solved — but you've now lied about the semantics. `POST` is
+**neither safe nor idempotent**, and the entire HTTP ecosystem believes you:
+
+- **Caches refuse to cache it.** `POST` responses are generally non-cacheable, so every
+  identical search hits your origin. A `GET` search could have been served from a CDN.
+- **Clients won't retry safely.** Libraries, proxies, and browsers will not automatically
+  retry a failed `POST` because it _might_ have side effects. A genuinely read-only
+  operation loses free resilience.
+- **Intent is lost.** Logs, dashboards, and security tools can't distinguish a read from a
+  write. A `POST` to `/products/search` looks the same as a `POST` that charges a credit
+  card.
+
+<Info>
+  This is the crux: `GET` has the right *semantics* but the wrong *shape* (no body), and `POST` has
+  the right *shape* but the wrong *semantics*. `QUERY` is the method that has both right.
+</Info>
+
+## What QUERY actually is
+
+`QUERY` is defined as a request method that is both **safe** and **idempotent**, and
+that **includes a request body** describing the query. In plain terms:
+
+- **Safe** — it does not modify server state; it is a read.
+- **Idempotent** — sending it once or several times has the same effect, so clients and
+  proxies may retry it.
+- **Has a body** — the query lives in the request body with a proper `Content-Type`,
+  instead of being squeezed into the URL.
+- **Cacheable** — because it is safe and idempotent, its responses _can_ be cached, keyed
+  on the request content.
+
+Here is the same search expressed with `QUERY`:
+
+```http title="QUERY: right semantics, right shape"
+QUERY /products/search HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Accept: application/json
+
+{
+  "category": "shoes",
+  "color": ["red", "blue"],
+  "price": { "min": 50, "max": 200 },
+  "sort": "price_desc",
+  "inStock": true
+}
+```
+
+The request reads naturally: an arbitrarily complex, strongly-typed payload, with the
+server free to treat it as a cacheable read and clients free to retry it.
+
+### The content-based cache key
+
+A `GET` cache is keyed on the URL. Since a `QUERY` payload is in the body, the spec
+addresses caching by keying on the request content. A server signals this with the
+`Content-Location` response header, which points at a URL that represents the specific
+result — letting intermediaries cache and later serve it:
+
+```http title="Server response enabling caching"
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Location: /products/search/results/9f2c...
+Cache-Control: max-age=300
+
+{ "results": [ /* ... */ ], "total": 128 }
+```
+
+<Tip title="Mental model">
+  Think of `QUERY` as "a `GET` whose parameters happen to live in the body." Everything you expect
+  from a safe read — caching, retries, no side effects — still holds.
+</Tip>
+
+## QUERY vs. the methods you know
+
+| Method  | Safe | Idempotent | Request body | Cacheable | Intended use                    |
+| ------- | ---- | ---------- | ------------ | --------- | ------------------------------- |
+| `GET`   | ✅   | ✅         | ❌ (ignored) | ✅        | Read via URL                    |
+| `POST`  | ❌   | ❌         | ✅           | ❌ (rare) | Create / arbitrary side effects |
+| `PUT`   | ❌   | ✅         | ✅           | ❌        | Replace a resource              |
+| `QUERY` | ✅   | ✅         | ✅           | ✅        | **Read with a complex payload** |
+
+The one-line summary: **`QUERY` is `GET` with a body, or `POST` without the side
+effects.** It occupies the exact gap that has forced years of workarounds.
+
+<Note>
+  Technically nothing stopped you from attaching a body to a `GET`, but RFC 9110 states that a body
+  on `GET` has no defined semantics and may cause requests to be rejected. In practice it is unsafe
+  to rely on — which is precisely why `QUERY` exists.
+</Note>
+
+## How it benefits developers
+
+Beyond fitting the model correctly, `QUERY` delivers practical wins:
+
+1. **Complex searches without URL limits.** Faceted search, geospatial filters, nested
+   boolean logic, and GraphQL-style payloads fit comfortably in a body.
+2. **Free caching for expensive reads.** A safe, idempotent method is cacheable by CDNs
+   and proxies — the performance win you had to abandon when you switched to `POST`.
+3. **Automatic, safe retries.** Because the method is idempotent, client libraries and
+   infrastructure can retry transient failures without fear of double-charging or
+   duplicate writes.
+4. **Sensitive parameters stay out of URLs.** Search terms and identifiers travel in the
+   body, so they don't leak into access logs, browser history, or `Referer` headers.
+5. **Honest observability.** Reads and writes are finally distinguishable at the protocol
+   level, which makes logs, metrics, WAF rules, and audit trails far more accurate.
+
+<Warning title="Not a write channel">
+  `QUERY` is for reads. It must remain safe and idempotent. If your operation changes server state,
+  it is a `POST`/`PUT`/`PATCH` — do not reach for `QUERY` just to get a tidy request body.
+</Warning>
+
+## Adopting QUERY today
+
+Support is still rolling out, so ship it defensively.
+
+```typescript title="query-with-fallback.ts" {8-15}
+async function search(filter: SearchFilter): Promise<SearchResult> {
+  const body = JSON.stringify(filter);
+  const headers = { 'Content-Type': 'application/json' };
+
+  try {
+    // Preferred: correct semantics, cacheable, ret/-safe.
+    const res = await fetch('/products/search', { method: 'QUERY', headers, body });
+    if (res.ok) return res.json();
+    // 405/501 → server or proxy doesn't understand QUERY yet.
+    if (res.status !== 405 && res.status !== 501) throw new Error(`Search failed: ${res.status}`);
+  } catch {
+    // Network layer rejected the method — fall through.
+  }
+
+  // Fallback: POST the same body to the same endpoint.
+  const res = await fetch('/products/search', { method: 'POST', headers, body });
+  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+  return res.json();
+}
+```
+
+<Collapsible title="Checklist before you enable QUERY in production">
+
+- Confirm your **web framework** can route a `QUERY` method (many treat unknown methods as errors).
+- Check every **proxy, load balancer, and CDN** in the path — some drop non-standard methods or
+  bodies on "GET-like" requests.
+- Ensure your handler is genuinely **safe and idempotent** — no writes, no side effects.
+- Provide a **`POST` fallback** for clients and intermediaries that don't support `QUERY` yet.
+- Set caching headers (`Content-Location`, `Cache-Control`) deliberately if you want caching.
+
+</Collapsible>
+
+## The takeaway
+
+`QUERY` closes a gap that has annoyed API developers since the beginning of REST:
+expressing a rich, read-only request. Instead of choosing between a `GET` that can't
+carry a payload and a `POST` that throws away safety, idempotency, and caching, you get
+a method that keeps all three while accepting a proper request body. Introduce it behind
+a fallback today, and retire your `POST /search` workarounds as support matures.
+
+## References
+
+<References
+  items={[
+    {
+      title: 'The HTTP QUERY Method (IETF HTTP Working Group draft)',
+      url: 'https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/',
+    },
+    {
+      title: 'RFC 9110 — HTTP Semantics (safe & idempotent methods)',
+      url: 'https://www.rfc-editor.org/rfc/rfc9110',
+    },
+    {
+      title: 'RFC 5323 — Web Distributed Authoring and Versioning (WebDAV) SEARCH',
+      url: 'https://www.rfc-editor.org/rfc/rfc5323',
+    },
+  ]}
+/>

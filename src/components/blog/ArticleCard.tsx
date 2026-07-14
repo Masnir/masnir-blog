@@ -68,8 +68,8 @@ export function ArticleCard({
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="bg-grid flex h-full w-full items-center justify-center text-muted">
-            <span className="text-4xl font-bold text-border">{categoryName}</span>
+          <div className="flex h-full w-full items-center justify-center p-4 text-muted">
+            <span className="text-center text-4xl font-bold text-fg">{categoryName}</span>
           </div>
         )}
       </Link>
